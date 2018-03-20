@@ -1,6 +1,6 @@
-/* tcp_ client.c */
+/* tcp_ client.c */ 
 /* Programmed by Adarsh Sethi */
-/* February 21, 2018 */
+/* February 21, 2018 */     
 
 #include <stdio.h>          /* for standard I/O functions */
 #include <stdlib.h>         /* for exit */
@@ -30,10 +30,10 @@ int main(void) {
 
    char filename[STRING_SIZE];  /* send message */
    char modifiedSentence[STRING_SIZE]; /* receive message */
-   unsigned int msg_len;  /* length of message */
+   unsigned int msg_len;  /* length of message */                      
    int bytes_sent, bytes_recd; /* number of bytes sent or received */
    short packet_sequence; /* Packet Sequence number */
-
+  
    /* open a socket */
 
    if ((sock_client = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0) {
@@ -41,7 +41,7 @@ int main(void) {
       exit(1);
    }
 
-   /* Note: there is no need to initialize local client address information
+   /* Note: there is no need to initialize local client address information 
             unless you want to specify a specific local port
             (in which case, do it the same way as in udpclient.c).
             The local address initialization and binding is done automatically
@@ -56,67 +56,68 @@ int main(void) {
       perror("Client: invalid server hostname");
       close(sock_client);
       exit(1);
-    }
+   }
 
-       printf("Enter port number for server: ");
-       scanf("%hu", &server_port);
+   printf("Enter port number for server: ");
+   scanf("%hu", &server_port);
 
-       /* Clear server address structure and initialize with server address */
-       memset(&server_addr, 0, sizeof(server_addr));
-       server_addr.sin_family = AF_INET;
-       memcpy((char *)&server_addr.sin_addr, server_hp->h_addr,
-                                        server_hp->h_length);
-       server_addr.sin_port = htons(server_port);
+   /* Clear server address structure and initialize with server address */
+   memset(&server_addr, 0, sizeof(server_addr));
+   server_addr.sin_family = AF_INET;
+   memcpy((char *)&server_addr.sin_addr, server_hp->h_addr,
+                                    server_hp->h_length);
+   server_addr.sin_port = htons(server_port);
 
-        /* connect to the server */
+    /* connect to the server */
+ 		
+   if (connect(sock_client, (struct sockaddr *) &server_addr, 
+                                    sizeof (server_addr)) < 0) {
+      perror("Client: can't connect to server");
+      close(sock_client);
+      exit(1);
+   }
+  
+   /* user interface */
 
-       if (connect(sock_client, (struct sockaddr *) &server_addr,
-                                        sizeof (server_addr)) < 0) {
-          perror("Client: can't connect to server");
-          close(sock_client);
-          exit(1);
-       }
+   printf("Please enter the filename:\n");
+   scanf("%s", filename);
+   msg_len = strlen(filename) + 1;
 
-       /* user interface */
+   struct header packetheader = {packet_sequence = 0, msg_len = sizeof(filename)};
 
-       printf("Please enter the filename:\n");
-       scanf("%s", filename);
-       msg_len = strlen(filename) + 1;
+   /* send message */
+   printf("1");
+   bytes_sent = send(sock_client, &packetheader, sizeof(&packetheader), 0);
+   printf("\n%lu", sizeof(&packetheader));
+   bytes_sent = send(sock_client, filename, msg_len, 0);
+   printf("3");
+  /* Open the output file */
 
-       struct header packetheader = {packet_sequence = 0, msg_len = sizeof(filename)};
+   FILE* output = fopen("out.txt", "w");
 
-       /* send message */
-       printf("1");
-         bytes_sent = send(sock_client, &packetheader, sizeof(&packetheader), 0);
-         printf("\n%lu", sizeof(&packetheader));
-         bytes_sent = send(sock_client, filename, msg_len, 0);
-         printf("3");
-        /* Open the output file */
-
-         FILE* output = fopen("out.txt", "w");
-
-         /* get response from server */
-         char line[80];
-         for ( ; ; ){
-            bytes_recd = recv(sock_client, &packetheader, 8, 0);
-            if (bytes_recd <= 0){
-                break;
-            }
-            packetheader.packet_sequence  = ntohs(packetheader.packet_sequence);
-            packetheader.msg_len  = ntohs(packetheader.msg_len);
-            int line_size = packetheader.msg_len;
-            if (line_size == 0){
-                break;
-            }
-            bytes_recd = recv(sock_client, line, line_size, 0);
-            if (bytes_recd <= 0){
-                break;
-            }
-            fputs(line, output);
-
-
+   /* get response from server */ 
+   char line[80];
+   for ( ; ; ){
+      bytes_recd = recv(sock_client, &packetheader, 8, 0);
+      if (bytes_recd <= 0){
+	  break;
       }
-      /* close the socket */
+      packetheader.packet_sequence  = ntohs(packetheader.packet_sequence); 
+      packetheader.msg_len  = ntohs(packetheader.msg_len); 
+      int line_size = packetheader.msg_len;
+      if (line_size == 0){
+	  break;
+      }
+      bytes_recd = recv(sock_client, line, line_size, 0);
+      if (bytes_recd <= 0){
+          break;
+      }
+      fputs(line, output); 
+ 
+ 
+}
 
-        close (sock_client);
-     }
+   /* close the socket */
+
+   close (sock_client);
+}

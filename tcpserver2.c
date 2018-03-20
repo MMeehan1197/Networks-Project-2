@@ -101,10 +101,10 @@ int main(void) {
      
       bytes_recd = recv(sock_connection, packetheader, 8, 0);
       printf("1");
-      packetheader.packet_sequence  = ntohs(packetheader.packet_sequence);
+      packetheader->packet_sequence  = ntohs(packetheader->packet_sequence);
       printf("2");
-      packetheader.msg_len  = ntohs(packetheader.msg_len);
-      int filename_size = packetheader.msg_len;
+      packetheader->msg_len  = ntohs(packetheader->msg_len);
+      int filename_size = packetheader->msg_len;
       printf("3");
       bytes_recd = recv(sock_connection, filename, filename_size, 0);
       /* Opening the file */
@@ -113,16 +113,16 @@ int main(void) {
 
       int count, c ;
       char current_line[80];
-      short packet_sequence = packetheader.packet_sequence;
-      short msg_len = packetheader.msg_len;
+      short packet_sequence = packetheader->packet_sequence;
+      short msg_len = packetheader->msg_len;
       count = 0;
       for( ; ; ){
 	c = fgetc( file);
 	if(c == EOF){
 	   packet_sequence += 1;
            msg_len = count;
-           packetheader.packet_sequence  = htons(packet_sequence);
-           packetheader.msg_len  = htons(msg_len);
+           packetheader->packet_sequence  = htons(packet_sequence);
+           packetheader->msg_len  = htons(msg_len);
            bytes_sent = send(sock_connection, &packetheader, 8, 0);
            printf("Line");
 	   bytes_sent = send(sock_connection, current_line, msg_len + 1, 0);
@@ -133,8 +133,8 @@ int main(void) {
            count++;
            packet_sequence += 1;
            msg_len = count;
-           packetheader.packet_sequence  = htons(packet_sequence);
-           packetheader.msg_len  = htons(msg_len);
+           packetheader->packet_sequence  = htons(packet_sequence);
+           packetheader->msg_len  = htons(msg_len);
            bytes_sent = send(sock_connection, &packetheader, 8, 0);
            printf("Line");
 	   bytes_sent = send(sock_connection, current_line, msg_len + 1, 0);
@@ -148,8 +148,8 @@ int main(void) {
 
      /* Sending End of transmission packet */
 
-     packetheader.packet_sequence += 1;
-     packetheader.msg_len = 0;
+     packetheader->packet_sequence += 1;
+     packetheader->msg_len = 0;
      bytes_sent = send(sock_connection, &packetheader, 8, 0);
 
       /* close the socket */
