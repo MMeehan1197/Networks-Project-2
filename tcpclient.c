@@ -13,8 +13,8 @@
 #define STRING_SIZE 1024
 
 struct header {
-   short packet_sequence;
-   short msg_len;
+   unsigned short packet_sequence;
+   unsigned short msg_len;
 };
 
 int main(void) {
@@ -83,14 +83,14 @@ int main(void) {
    scanf("%s", filename);
    msg_len = strlen(filename) + 1;
 
-   struct header packetheader = {packet_sequence = 0, msg_len = sizeof(filename)};
+   /* Prepare the header to be sent */
+   struct header packetheader;
+   packetheader.packet_sequence = htons(0);
+   packetheader.msg_len = htons(msg_len);
 
    /* send message */
-   printf("1");
-   bytes_sent = send(sock_client, &packetheader, sizeof(&packetheader), 0);
-   printf("\n%lu", sizeof(&packetheader));
+   bytes_sent = send(sock_client, &packetheader, sizeof(packetheader), 0);
    bytes_sent = send(sock_client, filename, msg_len, 0);
-   printf("3");
   /* Open the output file */
 
    FILE* output = fopen("out.txt", "w");
@@ -98,7 +98,7 @@ int main(void) {
    /* get response from server */ 
    char line[80];
    for ( ; ; ){
-      bytes_recd = recv(sock_client, &packetheader, 8, 0);
+      bytes_recd = recv(sock_client, &packetheader, sizeof(packetheader), 0);
       if (bytes_recd <= 0){
 	  break;
       }
@@ -109,6 +109,7 @@ int main(void) {
 	  break;
       }
       bytes_recd = recv(sock_client, line, line_size, 0);
+      printf("%s",line);
       if (bytes_recd <= 0){
           break;
       }

@@ -4,8 +4,8 @@ all:	tcpclient tcpserver udpclient udpserver
 tcpclient: tcpclient.c;
 	${CC} tcpclient.c -o tcpclient
 
-tcpserver: tcpserver2.c;
-	${CC} tcpserver2.c -o tcpserver
+tcpserver: tcpserver.c;
+	${CC} tcpserver.c -o tcpserver
 
 udpclient: udpclient.c;
 	${CC} udpclient.c -o udpclient

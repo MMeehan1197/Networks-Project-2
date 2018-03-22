@@ -21,8 +21,8 @@
 /* Defining the struct for the header */
 
 struct header{
-	short packet_sequence;
-	short msg_len;
+   unsigned short packet_sequence;
+   unsigned short msg_len;
 };
 
 int main(void) {
@@ -44,7 +44,7 @@ int main(void) {
    unsigned int msg_len;  /* length of message */
    int bytes_sent, bytes_recd; /* number of bytes sent or received */
    unsigned int i;  /* temporary loop variable */
-   struct header* packetheader = malloc(8);
+   struct header packetheader;
 
    /* open a socket */
 
@@ -99,52 +99,38 @@ int main(void) {
  
       /* receive the message */
      
-      bytes_recd = recv(sock_connection, packetheader, 8, 0);
-      printf("1");
+      bytes_recd = recv(sock_connection, &packetheader, sizeof(packetheader), 0);
+
+      /* Process the Header */
+
       packetheader.packet_sequence  = ntohs(packetheader.packet_sequence);
-      printf("2");
       packetheader.msg_len  = ntohs(packetheader.msg_len);
       int filename_size = packetheader.msg_len;
-      printf("3");
+
       bytes_recd = recv(sock_connection, filename, filename_size, 0);
       /* Opening the file */
 
       FILE *file = fopen(filename, "r");
 
-      int count, c ;
-      char current_line[80];
+      int count, c ;    /* The number of characters in the line and the current character */
+      char current_line[80];    /* Buffer for the line of characters */
       short packet_sequence = packetheader.packet_sequence;
       short msg_len = packetheader.msg_len;
       count = 0;
       for( ; ; ){
-	c = fgetc( file);
-	if(c == EOF){
+	/* Get the next line in the file */
+	while(fgets(current_line, sizeof(current_line), file) != NULL){
 	   packet_sequence += 1;
-           msg_len = count;
-           packetheader.packet_sequence  = htons(packet_sequence);
-           packetheader.msg_len  = htons(msg_len);
-           bytes_sent = send(sock_connection, &packetheader, 8, 0);
-           printf("Line");
-	   bytes_sent = send(sock_connection, current_line, msg_len + 1, 0);
-	   break;
-        }
-	else if(c == '\n'){
-	   current_line[count] =(char) c;
-           count++;
-           packet_sequence += 1;
-           msg_len = count;
-           packetheader.packet_sequence  = htons(packet_sequence);
-           packetheader.msg_len  = htons(msg_len);
-           bytes_sent = send(sock_connection, &packetheader, 8, 0);
-           printf("Line");
-	   bytes_sent = send(sock_connection, current_line, msg_len + 1, 0);
-	   count = 0;
+	   msg_len = sizeof(current_line);
+	   packetheader.packet_sequence = htons(packet_sequence);
+	   packetheader.msg_len = htons(msg_len);
+	   bytes_sent = send(sock_connection, &packetheader, sizeof(packetheader), 0);
+           bytes_sent = send(sock_connection, current_line, msg_len, 0);
+           printf("Packet %d transmitted with %d data bytes\n", packet_sequence, msg_len);
 	}
-	else{
-	   current_line[count] = (char) c;
-	   count++;
-	 }
-     }
+	fclose(file);
+	break;
+      }
 
      /* Sending End of transmission packet */
 
