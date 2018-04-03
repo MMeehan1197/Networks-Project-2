@@ -1,0 +1,161 @@
+Script started on Tue 03 Apr 2018 05:56:24 PM EDT
+mjmeehan@cisc450:~/project1/networksProject1$ ls -l
+total 40
+-rw-rw-r-- 1 mjmeehan mjmeehan     0 Apr  3 17:56 clientlog
+-rw-rw-r-- 1 mjmeehan mjmeehan   342 Apr  3 11:16 Makefile
+-rw-rw-r-- 1 mjmeehan mjmeehan  1159 Apr  3 11:16 out.txt
+-rw-rw-r-- 1 mjmeehan mjmeehan    19 Apr  3 11:16 README.md
+-rw-rw-r-- 1 mjmeehan mjmeehan     0 Apr  3 17:55 serverlog
+-rw-rw-r-- 1 mjmeehan mjmeehan  4041 Apr  3 11:16 tcpclient.c
+-rwxrwxr-x 1 mjmeehan mjmeehan 13479 Apr  3 17:55 tcpserver
+-rw-rw-r-- 1 mjmeehan mjmeehan  5467 Apr  3 11:16 tcpserver2.c
+-rw-rw-r-- 1 mjmeehan mjmeehan  5223 Apr  3 17:31 tcpserver.c
+-rw-rw-r-- 1 mjmeehan mjmeehan  4485 Apr  3 11:16 tcpserver.c.save
+-rw-rw-r-- 1 mjmeehan mjmeehan  1159 Apr  3 11:16 test1.txt
+-rw-rw-r-- 1 mjmeehan mjmeehan  2510 Apr  3 11:16 test2.txt
+-rw-rw-r-- 1 mjmeehan mjmeehan  4429 Apr  3 11:16 udpclient.c
+-rw-rw-r-- 1 mjmeehan mjmeehan  3200 Apr  3 11:16 udpserver.c
+mjmeehan@cisc450:~/project1/networksProject1$ make tcpclient
+/usr/bin/gcc tcpclient.c -o tcpclient
+mjmeehan@cisc450:~/project1/networksProject1$ ls -l
+total 41
+-rw-rw-r-- 1 mjmeehan mjmeehan     0 Apr  3 17:56 clientlog
+-rw-rw-r-- 1 mjmeehan mjmeehan   342 Apr  3 11:16 Makefile
+-rw-rw-r-- 1 mjmeehan mjmeehan  1159 Apr  3 11:16 out.txt
+-rw-rw-r-- 1 mjmeehan mjmeehan    19 Apr  3 11:16 README.md
+-rw-rw-r-- 1 mjmeehan mjmeehan     0 Apr  3 17:55 serverlog
+-rwxrwxr-x 1 mjmeehan mjmeehan 13605 Apr  3 17:56 tcpclient
+-rw-rw-r-- 1 mjmeehan mjmeehan  4041 Apr  3 11:16 tcpclient.c
+-rwxrwxr-x 1 mjmeehan mjmeehan 13479 Apr  3 17:55 tcpserver
+-rw-rw-r-- 1 mjmeehan mjmeehan  5467 Apr  3 11:16 tcpserver2.c
+-rw-rw-r-- 1 mjmeehan mjmeehan  5223 Apr  3 17:31 tcpserver.c
+-rw-rw-r-- 1 mjmeehan mjmeehan  4485 Apr  3 11:16 tcpserver.c.save
+-rw-rw-r-- 1 mjmeehan mjmeehan  1159 Apr  3 11:16 test1.txt
+-rw-rw-r-- 1 mjmeehan mjmeehan  2510 Apr  3 11:16 test2.txt
+-rw-rw-r-- 1 mjmeehan mjmeehan  4429 Apr  3 11:16 udpclient.c
+-rw-rw-r-- 1 mjmeehan mjmeehan  3200 Apr  3 11:16 udpserver.c
+mjmeehan@cisc450:~/project1/networksProject1$ cat test2.txt 
+In this project, you will implement a client and a server
+which use TCP to transmit a file from the server to the client.
+Both the client and the server will run on the course VM
+{\em cisc450.cis.udel.edu},
+but they should be written in such a way that they could
+conceivably be run on any two hosts, not necessarily the same.
+For convenience, both the hostname and the server
+port number may be hardcoded into both client and server,
+but this should be done in such a way that they should
+be easy to change.
+
+The server starts by waiting for a connection request from the client. %printin
+
+The client starts by prompting the user to enter 
+%the hostname and port number for the server. 
+%It then prompts the user to enter
+the name of the file to be transferred. The client then sends a connection
+request to the server.  After the connection is established, the client sends a
+filename to the server. The server reads the file and sends it to the client in
+a series of packets as described below. The client receives the file and stores
+it with the name {\em out.txt}.
+When the file transfer is complete, both the client 
+A
+B
+C
+DEF
+
+G
+H
+and the server terminate execution.
+
+The format of a data packet is shown in the figure below:
+
+\begin{verbatim}
+    <----------------- 16 bits (2 bytes) ------------------>
+    --------------------------------------------------------
+    |                Packet Sequence Number                |
+    --------------------------------------------------------
+    |              Count (no. of data bytes)               |
+    --------------------------------------------------------
+    |            Data Bytes      |          ...            |
+    --------------------------------------------------------
+\end{verbatim}
+
+Each data packet contains a 4-byte long header followed by a number of data
+characters.  The header contains  2 fields, each of length 16 bits (2 bytes) as
+shown in the figure above. You must convert the values in these fields
+into the network byte order when they are transmitted, and convert them back to
+convert them back to host byte order when they are received.
+
+
+The first field of the header is called the packet sequence number. Each packet
+transmitted  by the  server is  assigned a sequence number  starting with 1 and
+incremented by 1 for each packet.  The second field of the header is a count of
+data characters in the packet. This value must be in the range 0 through 80. If
+the count is 0, then there are no data
+characters in the packet.
+mjmeehan@cisc450:~/project1/networksProject1$ .tcp[K[K[K[K./tcpclient
+Enter hostname of server: cisc450
+Enter port number for server: 46920
+Please enter the filename:
+test2.txt
+In this project, you will implement a client and a server
+which use TCP to transmit a file from the server to the client.
+Both the client and the server will run on the course VM
+{\em cisc450.cis.udel.edu},
+but they should be written in such a way that they could
+conceivably be run on any two hosts, not necessarily the same.
+For convenience, both the hostname and the server
+port number may be hardcoded into both client and server,
+but this should be done in such a way that they should
+be easy to change.
+
+The server starts by waiting for a connection request from the client. %printin
+
+The client starts by prompting the user to enter 
+%the hostname and port number for the server. 
+%It then prompts the user to enter
+the name of the file to be transferred. The client then sends a connection
+request to the server.  After the connection is established, the client sends a
+filename to the server. The server reads the file and sends it to the client in
+a series of packets as described below. The client receives the file and stores
+it with the name {\em out.txt}.
+When the file transfer is complete, both the client 
+A
+B
+C
+DEF
+
+G
+H
+and the server terminate execution.
+
+The format of a data packet is shown in the figure below:
+
+\begin{verbatim}
+    <----------------- 16 bits (2 bytes) ------------------>
+    --------------------------------------------------------
+    |                Packet Sequence Number                |
+    --------------------------------------------------------
+    |              Count (no. of data bytes)               |
+    --------------------------------------------------------
+    |            Data Bytes      |          ...            |
+    --------------------------------------------------------
+\end{verbatim}
+
+Each data packet contains a 4-byte long header followed by a number of data
+characters.  The header contains  2 fields, each of length 16 bits (2 bytes) as
+shown in the figure above. You must convert the values in these fields
+into the network byte order when they are transmitted, and convert them back to
+convert them back to host byte order when they are received.
+
+
+The first field of the header is called the packet sequence number. Each packet
+transmitted  by the  server is  assigned a sequence number  starting with 1 and
+incremented by 1 for each packet.  The second field of the header is a count of
+data characters in the packet. This value must be in the range 0 through 80. If
+the count is 0, then there are no data
+characters in the packet.
+mjmeehan@cisc450:~/project1/networksProject1$ diff out.txt test2.txt
+mjmeehan@cisc450:~/project1/networksProject1$ exit
+exit
+
+Script done on Tue 03 Apr 2018 06:05:31 PM EDT

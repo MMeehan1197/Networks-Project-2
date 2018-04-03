@@ -1,0 +1,108 @@
+Script started on Tue 03 Apr 2018 05:55:26 PM EDT
+mjmeehan@cisc450:~/project1/networksProject1$ ls -l
+total 33
+-rw-rw-r-- 1 mjmeehan mjmeehan  342 Apr  3 11:16 Makefile
+-rw-rw-r-- 1 mjmeehan mjmeehan 1159 Apr  3 11:16 out.txt
+-rw-rw-r-- 1 mjmeehan mjmeehan   19 Apr  3 11:16 README.md
+-rw-rw-r-- 1 mjmeehan mjmeehan    0 Apr  3 17:55 serverlog
+-rw-rw-r-- 1 mjmeehan mjmeehan 4041 Apr  3 11:16 tcpclient.c
+-rw-rw-r-- 1 mjmeehan mjmeehan 5467 Apr  3 11:16 tcpserver2.c
+-rw-rw-r-- 1 mjmeehan mjmeehan 5223 Apr  3 17:31 tcpserver.c
+-rw-rw-r-- 1 mjmeehan mjmeehan 4485 Apr  3 11:16 tcpserver.c.save
+-rw-rw-r-- 1 mjmeehan mjmeehan 1159 Apr  3 11:16 test1.txt
+-rw-rw-r-- 1 mjmeehan mjmeehan 2510 Apr  3 11:16 test2.txt
+-rw-rw-r-- 1 mjmeehan mjmeehan 4429 Apr  3 11:16 udpclient.c
+-rw-rw-r-- 1 mjmeehan mjmeehan 3200 Apr  3 11:16 udpserver.c
+mjmeehan@cisc450:~/project1/networksProject1$ make tcpserver
+/usr/bin/gcc tcpserver.c -o tcpserver
+mjmeehan@cisc450:~/project1/networksProject1$ ls -l
+total 34
+-rw-rw-r-- 1 mjmeehan mjmeehan   342 Apr  3 11:16 Makefile
+-rw-rw-r-- 1 mjmeehan mjmeehan  1159 Apr  3 11:16 out.txt
+-rw-rw-r-- 1 mjmeehan mjmeehan    19 Apr  3 11:16 README.md
+-rw-rw-r-- 1 mjmeehan mjmeehan     0 Apr  3 17:55 serverlog
+-rw-rw-r-- 1 mjmeehan mjmeehan  4041 Apr  3 11:16 tcpclient.c
+-rwxrwxr-x 1 mjmeehan mjmeehan 13479 Apr  3 17:55 tcpserver
+-rw-rw-r-- 1 mjmeehan mjmeehan  5467 Apr  3 11:16 tcpserver2.c
+-rw-rw-r-- 1 mjmeehan mjmeehan  5223 Apr  3 17:31 tcpserver.c
+-rw-rw-r-- 1 mjmeehan mjmeehan  4485 Apr  3 11:16 tcpserver.c.save
+-rw-rw-r-- 1 mjmeehan mjmeehan  1159 Apr  3 11:16 test1.txt
+-rw-rw-r-- 1 mjmeehan mjmeehan  2510 Apr  3 11:16 test2.txt
+-rw-rw-r-- 1 mjmeehan mjmeehan  4429 Apr  3 11:16 udpclient.c
+-rw-rw-r-- 1 mjmeehan mjmeehan  3200 Apr  3 11:16 udpserver.c
+mjmeehan@cisc450:~/project1/networksProject1$ ./tcpserver
+I am here to listen ... on port 46920
+
+Packet 1 transmitted with 80 data bytes
+Packet 2 transmitted with 80 data bytes
+Packet 3 transmitted with 80 data bytes
+Packet 4 transmitted with 80 data bytes
+Packet 5 transmitted with 80 data bytes
+Packet 6 transmitted with 80 data bytes
+Packet 7 transmitted with 80 data bytes
+Packet 8 transmitted with 80 data bytes
+Packet 9 transmitted with 80 data bytes
+Packet 10 transmitted with 80 data bytes
+Packet 11 transmitted with 80 data bytes
+Packet 12 transmitted with 80 data bytes
+Packet 13 transmitted with 80 data bytes
+Packet 14 transmitted with 80 data bytes
+Packet 15 transmitted with 80 data bytes
+Packet 16 transmitted with 80 data bytes
+Packet 17 transmitted with 80 data bytes
+Packet 18 transmitted with 80 data bytes
+Packet 19 transmitted with 80 data bytes
+Packet 20 transmitted with 80 data bytes
+Packet 21 transmitted with 80 data bytes
+Packet 22 transmitted with 80 data bytes
+Packet 23 transmitted with 80 data bytes
+Packet 24 transmitted with 80 data bytes
+Packet 25 transmitted with 80 data bytes
+Packet 26 transmitted with 80 data bytes
+Packet 27 transmitted with 80 data bytes
+Packet 28 transmitted with 80 data bytes
+Packet 29 transmitted with 80 data bytes
+Packet 30 transmitted with 80 data bytes
+Packet 31 transmitted with 80 data bytes
+Packet 32 transmitted with 80 data bytes
+Packet 33 transmitted with 80 data bytes
+Packet 34 transmitted with 80 data bytes
+Packet 35 transmitted with 80 data bytes
+Packet 36 transmitted with 80 data bytes
+Packet 37 transmitted with 80 data bytes
+Packet 38 transmitted with 80 data bytes
+Packet 39 transmitted with 80 data bytes
+Packet 40 transmitted with 80 data bytes
+Packet 41 transmitted with 80 data bytes
+Packet 42 transmitted with 80 data bytes
+Packet 43 transmitted with 80 data bytes
+Packet 44 transmitted with 80 data bytes
+Packet 45 transmitted with 80 data bytes
+Packet 46 transmitted with 80 data bytes
+Packet 47 transmitted with 80 data bytes
+Packet 48 transmitted with 80 data bytes
+Packet 49 transmitted with 80 data bytes
+Packet 50 transmitted with 80 data bytes
+Packet 51 transmitted with 80 data bytes
+Packet 52 transmitted with 80 data bytes
+Packet 53 transmitted with 80 data bytes
+Packet 54 transmitted with 80 data bytes
+Packet 55 transmitted with 80 data bytes
+Packet 56 transmitted with 80 data bytes
+Packet 57 transmitted with 80 data bytes
+Packet 58 transmitted with 80 data bytes
+Packet 59 transmitted with 80 data bytes
+Packet 60 transmitted with 80 data bytes
+Packet 61 transmitted with 80 data bytes
+Packet 62 transmitted with 80 data bytes
+Packet 63 transmitted with 80 data bytes
+Packet 64 transmitted with 80 data bytes
+Packet 65 transmitted with 80 data bytes
+Packet 66 transmitted with 80 data bytes
+Packet 67 transmitted with 80 data bytes
+out   exit
+^C
+mjmeehan@cisc450:~/project1/networksProject1$ exit
+exit
+
+Script done on Tue 03 Apr 2018 06:05:26 PM EDT
