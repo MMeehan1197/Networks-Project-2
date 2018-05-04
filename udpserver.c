@@ -16,7 +16,13 @@
    incoming messages from clients. You should change this to a different
    number to prevent conflicts with others in the class. */
 
-#define SERV_UDP_PORT 65100
+#define SERV_UDP_PORT 46920
+
+struct header{
+   unsigned short packet_sequence;
+   unsigned short msg_len;
+   char data[80];
+};
 
 int main(void) {
 
@@ -70,21 +76,49 @@ int main(void) {
    client_addr_len = sizeof (client_addr);
 
    for (;;) {
+      /* receive the message */
+     
+      bytes_recd = recv(sock_connection, &packetheader, sizeof(packetheader), 0);
 
-      bytes_recd = recvfrom(sock_server, &sentence, STRING_SIZE, 0,
-                     (struct sockaddr *) &client_addr, &client_addr_len);
-      printf("Received Sentence is: %s\n     with length %d\n\n",
-                         sentence, bytes_recd);
+      /* Process the Header */
 
-      /* prepare the message to send */
+      packetheader.packet_sequence  = ntohs(packetheader.packet_sequence);
+      packetheader.msg_len  = ntohs(packetheader.msg_len);
+      int filename_size = packetheader.msg_len;
 
-      msg_len = bytes_recd;
-      for (i=0; i<msg_len; i++)
-         modifiedSentence[i] = toupper (sentence[i]);
+      bytes_recd = recv(sock_connection, filename, filename_size, 0);
+      /* Opening the file */
 
-      /* send message */
- 
-      bytes_sent = sendto(sock_server, modifiedSentence, msg_len, 0,
-               (struct sockaddr*) &client_addr, client_addr_len);
+      FILE *file = fopen(filename, "r");
+
+      int count, c ;    /* The number of characters in the line and the current character */
+      char* current_line;    /* Buffer for the line of characters */
+      short packet_sequence = packetheader.packet_sequence;
+      short msg_len = packetheader.msg_len;
+      count = 0;
+      for( ; ; ){
+	/* Get the next line in the file */
+	while(fgets(current_line, sizeof(current_line), file) != NULL){
+	   packet_sequence += 1;
+	   msg_len = strlen(current_line);
+	   packetheader.packet_sequence = htons(packet_sequence);
+	   packetheader.msg_len = htons(msg_len);
+	   bytes_sent = send(sock_connection, &packetheader, sizeof(packetheader), 0);
+           bytes_sent = send(sock_connection, current_line, msg_len, 0);
+           printf("Packet %d transmitted with %d data bytes\n", packet_sequence, msg_len);
+	}
+	fclose(file);
+	break;
+      }
+
+     /* Sending End of transmission packet */
+
+     packetheader.packet_sequence += 1;
+     packetheader.msg_len = 0;
+     bytes_sent = send(sock_connection, &packetheader, 8, 0);
+
+      /* close the socket */
+
+      close(sock_connection);    
    }
 }
