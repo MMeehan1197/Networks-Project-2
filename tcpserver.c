@@ -94,7 +94,7 @@ int main(void) {
       if (sock_connection < 0) {
          perror("Server: accept() error\n"); 
          close(sock_server);
-         exit(1);
+         exit(-3);
       }
  
       /* receive the message */
@@ -113,7 +113,7 @@ int main(void) {
       FILE *file = fopen(filename, "r");
 
       int count, c ;    /* The number of characters in the line and the current character */
-      char current_line[80];    /* Buffer for the line of characters */
+      char* current_line;    /* Buffer for the line of characters */
       short packet_sequence = packetheader.packet_sequence;
       short msg_len = packetheader.msg_len;
       count = 0;
@@ -121,7 +121,7 @@ int main(void) {
 	/* Get the next line in the file */
 	while(fgets(current_line, sizeof(current_line), file) != NULL){
 	   packet_sequence += 1;
-	   msg_len = sizeof(current_line);
+	   msg_len = strlen(current_line);
 	   packetheader.packet_sequence = htons(packet_sequence);
 	   packetheader.msg_len = htons(msg_len);
 	   bytes_sent = send(sock_connection, &packetheader, sizeof(packetheader), 0);
