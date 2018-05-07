@@ -1,6 +1,6 @@
 /* udp_server.c */
-/* Programmed by Adarsh Sethi */
-/* February 21, 2018 */
+/* Project 2: Frank Hulmes and Michael Meehan */
+/* May 8 2018 */
 
 #include <ctype.h>          /* for toupper */
 #include <stdio.h>          /* for standard I/O functions */
@@ -11,6 +11,7 @@
 #include <unistd.h>         /* for close */
 
 #define STRING_SIZE 1024
+#define MAX_SIZE 80
 
 /* SERV_UDP_PORT is the port number on which the server listens for
    incoming messages from clients. You should change this to a different
@@ -18,107 +19,168 @@
 
 #define SERV_UDP_PORT 46920
 
-struct header{
+ /* Struct and Function Declarations */
+
+struct segment{
    unsigned short packet_sequence;
    unsigned short msg_len;
-   char data[80];
+   char data[STRING_SIZE];
 };
+
+struct ACK{
+      unsigned short number;
+};
+
+char * getLine(FILE *filename, char *currentLine){
+      // Gets the next line of the file, deals with null terminated strings
+      memset(currentLine, '\n', MAX_SIZE);
+      return fgets(currentLine, MAX_SIZE + 1, filename);
+}
+
 
 int main(void) {
 
-   int sock_server;  /* Socket on which server listens to clients */
+      /* Variable Declarations */
 
-   struct sockaddr_in server_addr;  /* Internet address structure that
-                                        stores server address */
-   unsigned short server_port;  /* Port number used by server (local port) */
+      int sock_server;  /* Socket on which server listens to clients */
 
-   struct sockaddr_in client_addr;  /* Internet address structure that
-                                        stores client address */
-   unsigned int client_addr_len;  /* Length of client address structure */
+      struct sockaddr_in server_addr;  /* Internet address structure that
+                                          stores server address */
+      unsigned short server_port;  /* Port number used by server (local port) */
 
-   char sentence[STRING_SIZE];  /* receive message */
-   char modifiedSentence[STRING_SIZE]; /* send message */
-   unsigned int msg_len;  /* length of message */
-   int bytes_sent, bytes_recd; /* number of bytes sent or received */
-   unsigned int i;  /* temporary loop variable */
+      struct sockaddr_in client_addr;  /* Internet address structure that
+                                          stores client address */
+      unsigned int client_addr_len;  /* Length of client address structure */
 
-   /* open a socket */
-
-   if ((sock_server = socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP)) < 0) {
-      perror("Server: can't open datagram socket\n");
-      exit(1);
-   }
-
-   /* initialize server address information */
-
-   memset(&server_addr, 0, sizeof(server_addr));
-   server_addr.sin_family = AF_INET;
-   server_addr.sin_addr.s_addr = htonl (INADDR_ANY);  /* This allows choice of
-                                        any host interface, if more than one
-                                        are present */
-   server_port = SERV_UDP_PORT; /* Server will listen on this port */
-   server_addr.sin_port = htons(server_port);
-
-   /* bind the socket to the local server port */
-
-   if (bind(sock_server, (struct sockaddr *) &server_addr,
-                                    sizeof (server_addr)) < 0) {
-      perror("Server: can't bind to local address\n");
-      close(sock_server);
-      exit(1);
-   }
-
-   /* wait for incoming messages in an indefinite loop */
-
-   printf("Waiting for incoming messages on port %hu\n\n", 
-                           server_port);
-
-   client_addr_len = sizeof (client_addr);
-
-   for (;;) {
-      /* receive the message */
-     
-      bytes_recd = recv(sock_connection, &packetheader, sizeof(packetheader), 0);
-
-      /* Process the Header */
-
-      packetheader.packet_sequence  = ntohs(packetheader.packet_sequence);
-      packetheader.msg_len  = ntohs(packetheader.msg_len);
-      int filename_size = packetheader.msg_len;
-
-      bytes_recd = recv(sock_connection, filename, filename_size, 0);
-      /* Opening the file */
-
-      FILE *file = fopen(filename, "r");
-
+      struct segment message;  /* receive segment */
+      char modifiedSentence[STRING_SIZE]; /* send message */
+      unsigned int msg_len;  /* length of message */
+      int bytes_sent, bytes_recd; /* number of bytes sent or received */
+      unsigned int i;  /* temporary loop variable */
       int count, c ;    /* The number of characters in the line and the current character */
       char* current_line;    /* Buffer for the line of characters */
-      short packet_sequence = packetheader.packet_sequence;
-      short msg_len = packetheader.msg_len;
-      count = 0;
-      for( ; ; ){
-	/* Get the next line in the file */
-	while(fgets(current_line, sizeof(current_line), file) != NULL){
-	   packet_sequence += 1;
-	   msg_len = strlen(current_line);
-	   packetheader.packet_sequence = htons(packet_sequence);
-	   packetheader.msg_len = htons(msg_len);
-	   bytes_sent = send(sock_connection, &packetheader, sizeof(packetheader), 0);
-           bytes_sent = send(sock_connection, current_line, msg_len, 0);
-           printf("Packet %d transmitted with %d data bytes\n", packet_sequence, msg_len);
-	}
-	fclose(file);
-	break;
+      struct timeval timeout;
+      struct ACK ack_rec;
+      short int ack_sequence = 0;
+
+      // THESE ARE DEFAULT TIMEOUT VALS, NEED TO BE CHANGED
+      timeout.tv_sec = 10;
+      timeout.tv_usec = 0;
+      setsockopt(sock_client, SOL_SOCKET, SO_RCVTIMEO, (const void *) &timeout, sizeof(timeout));
+
+
+      /* open a socket */
+
+      if ((sock_server = socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP)) < 0) {
+            perror("Server: can't open datagram socket\n");
+            exit(1);
       }
 
-     /* Sending End of transmission packet */
+      /* initialize server address information */
 
-     packetheader.packet_sequence += 1;
-     packetheader.msg_len = 0;
-     bytes_sent = send(sock_connection, &packetheader, 8, 0);
+      memset(&server_addr, 0, sizeof(server_addr));
+      server_addr.sin_family = AF_INET;
+      server_addr.sin_addr.s_addr = htonl (INADDR_ANY);  /* This allows choice of
+                                          any host interface, if more than one
+                                          are present */
+      server_port = SERV_UDP_PORT; /* Server will listen on this port */
+      server_addr.sin_port = htons(server_port);
+
+      /* bind the socket to the local server port */
+
+      if (bind(sock_server, (struct sockaddr *) &server_addr,
+                                          sizeof (server_addr)) < 0) {
+            perror("Server: can't bind to local address\n");
+            close(sock_server);
+            exit(1);
+      }
+
+      /* wait for incoming messages in an indefinite loop */
+
+      printf("Waiting for incoming messages on port %hu\n\n", 
+                              server_port);
+
+      client_addr_len = sizeof (client_addr);
+
+for (;;) {
+      /* Outer Loop: Wait for call from above */
+      for( ; ; ){
+            /* receive the message */
+      
+            bytes_recd = recvfrom(sock_server, &message, sizeof(message), 0, (struct sockaddr *) &client_addr, &client_addr_len);
+
+            /* Process the First Packet */
+
+            message.packet_sequence  = ntohs(message.packet_sequence);
+            message.msg_len  = ntohs(message.msg_len);
+            int filename_size = message.msg_len;
+            filename = message.data;
+
+            /* Opening the file */
+
+            FILE *file = fopen(filename, "r");
+            short packet_sequence = message.packet_sequence;
+            short msg_len = message.msg_len;
+            count = 0;
+
+            
+            /* Send the first line of the file to transition to next state */
+            if(getLine(file, current_line) != NULL){
+                  msg_len = strlen(current_line);
+                  message.packet_sequence = htons(packet_sequence);
+                  message.msg_len = htons(msg_len);
+                  strcopy(message.data, current_line);
+                  bytes_sent = sendto(sock_server, &message, sizeof(message), 0, (struct sockaddr *) &client_addr, &client_addr_len);
+                  printf("Packet %d transmitted with %d data bytes\n", packet_sequence, msg_len);
+            }
+            else{
+                  // Close connection if the file does not exist
+                  printf("File does not exist, terminating connection")
+                  break;
+            }
+            
+            /* Inner loop: Iterating through the lines of the file*/
+
+            for( ; ; ){
+                  /* Wait for ACK to send next line */
+                  bytes_recd = recvfrom(sock_server, &ack_rec, 2, 0, (struct sockaddr *) &client_addr, &client_addr_len);
+
+                  if (bytes_recd <=0){
+                        // Timeout, resend the line
+                        bytes_sent = sendto(sock_server, &message, sizeof(message), 0, (struct sockaddr *) &client_addr, &client_addr_len);
+                  }
+                  else if (akc_rec == ack_sequence){
+                        // Correct Ack recieved, transmit the next line
+                        if(getLine(file, current_line) != NULL){
+                              packet_sequence += 1;
+                              ack_sequence = 1 - ack_sequence;
+                              msg_len = strlen(current_line);
+                              message.packet_sequence = htons(packet_sequence);
+                              message.msg_len = htons(msg_len);
+                              message.data = current_line;
+                              bytes_sent = sendto(sock_server, &message, sizeof(message), 0, (struct sockaddr *) &client_addr, &client_addr_len);
+                              printf("Packet %d transmitted with %d data bytes\n", packet_sequence, msg_len);
+                        }
+                        else{
+                              // End of File, end loop
+                              break;
+                        }
+                  }
+                  // If incorrect ACK is recieved, do nothing
+            }
+            break;
+      }
+      fclose(file);
+
+      /* Sending End of transmission packet */
+
+      message.packet_sequence += 1;
+      message.msg_len = 0;
+      bytes_sent = send(sock_connection, &message, 8, 0);
 
       /* close the socket */
 
       close(sock_connection);    
-   }
+      
 }
+
