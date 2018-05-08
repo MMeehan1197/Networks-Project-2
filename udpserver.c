@@ -65,12 +65,13 @@ int main(int argc, char **argv) {
       short int ack_sequence = 0;
       int timeout_n;
 
-      // THESE ARE DEFAULT TIMEOUT VALS, NEED TO BE CHANGED
+      // Default timeouts
       timeout.tv_sec = 10;
       timeout.tv_usec = 0;
       setsockopt(sock_server, SOL_SOCKET, SO_RCVTIMEO, (const void *) &timeout, sizeof(timeout));
-      if(argc > 0){
-	  timeout_n = atoi(argv[0]);
+      // User set timeout
+      if(argc > 1){
+	  timeout_n = atoi(argv[1]);
           timeout.tv_sec = floor(pow(10, timeout_n)/pow(10, 6));
           timeout.tv_usec =(int) pow(10, timeout_n)% (int)pow(10, 6);
           setsockopt(sock_server, SOL_SOCKET, SO_RCVTIMEO, (const void *) &timeout, sizeof(timeout));
@@ -102,11 +103,20 @@ int main(int argc, char **argv) {
       }
 
       /* wait for incoming messages in an indefinite loop */
-
+      printf("Timeout value is %d seconds and %d microseconds\n",(int) timeout.tv_sec,(int) timeout.tv_usec);
       printf("Waiting for incoming messages on port %hu\n\n", 
                               server_port);
 
       client_addr_len = sizeof (client_addr);
+      /* Initialize all the statistics counters */
+      int packet_count = 0;
+      int initial_packets = 0;
+      int retransmissions = 0;
+      int acks_recieved = 0;
+      int data_bytes = 0;
+      int timeouts = 0;
+
+
 for (;;) {
       /* Outer Loop: Wait for call from above */
       for( ; ; ){
@@ -134,6 +144,8 @@ for (;;) {
                   message.msg_len = htons(msg_len);
                   strcpy(message.data, current_line);
                   bytes_sent = sendto(sock_server, &message, strlen(message.data) + 4, 0, (struct sockaddr *) &client_addr, client_addr_len);
+		  packet_count++;
+		  data_bytes += msg_len;
                   printf("Packet %d transmitted with %d data bytes\n", packet_sequence, msg_len);
             }
             else{
@@ -145,11 +157,18 @@ for (;;) {
             /* Inner loop: Iterating through the lines of the file*/
 
             for( ; ; ){
+		  // Reset Timeout
+	          setsockopt(sock_server, SOL_SOCKET, SO_RCVTIMEO, (const void *) &timeout, sizeof(timeout));
                   /* Wait for ACK to send next line */
                   bytes_recd = recvfrom(sock_server, &ack_rec, 2, 0, (struct sockaddr *) &client_addr, &client_addr_len);
+		  packet_count++;
 		  if (bytes_recd <= 0){
                         // Timeout, resend the line
-                        bytes_sent = sendto(sock_server, &message, sizeof(message), 0, (struct sockaddr *) &client_addr, client_addr_len);
+                        bytes_sent = sendto(sock_server, &message, strlen(message.data) + 4, 0, (struct sockaddr *) &client_addr, client_addr_len);
+		        data_bytes += msg_len;
+			timeouts++;
+			retransmissions++;
+			acks_recieved--;
                   }
                   else if (ntohs(ack_rec.number) == ack_sequence){
                         // Correct Ack recieved, transmit the next line
@@ -160,6 +179,7 @@ for (;;) {
                               message.packet_sequence = htons(ack_sequence);
                               message.msg_len = htons(msg_len);
                               strcpy(message.data, current_line);
+			      data_bytes += msg_len;
                               bytes_sent = sendto(sock_server, &message, msg_len + 4, 0, (struct sockaddr *) &client_addr, client_addr_len);
                               printf("Packet %d transmitted with %d data bytes\n", packet_sequence, msg_len);
                         }
@@ -168,6 +188,7 @@ for (;;) {
                               break;
                         }
                   }
+		  acks_recieved++;
                   // If incorrect ACK is recieved, do nothing
             }
       	fclose(file);
@@ -177,9 +198,15 @@ for (;;) {
       	eot_packet.packet_sequence = htons(packet_sequence + 1);
       	eot_packet.msg_len = htons(0);
       	bytes_sent = sendto(sock_server, &eot_packet, 4, 0, (struct sockaddr *)&client_addr, client_addr_len);
-	printf("EOT packet sent");
+	printf("EOT packet sent with sequence number %d and size %d\n", packet_sequence + 1, 0);
       	/* close the socket */
-
+	printf("-----Server Statistics-----\n");
+	printf("Number of packets initially transmitted: %d\n", packet_count - retransmissions);
+	printf("Number of data bytes transmitted: %d\n", data_bytes );
+	printf("Number of retransmissions: %d\n", retransmissions);
+	printf("Total number of packets transmitted: %d\n", packet_count);
+	printf("Number of ACKs recieved: %d\n", acks_recieved);
+	printf("Number of timeouts: %d\n", timeouts);
       	close(sock_server);
       	return 0; 
       	}

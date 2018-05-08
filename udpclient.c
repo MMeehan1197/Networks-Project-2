@@ -77,13 +77,12 @@ int main(int argc, char **argv) {
     struct segment send_message;
     struct segment recv_message;
     struct ACK send_ack;
-    struct timeval timeout;
 
-    if(argc >= 1){
-	packet_loss_rate = atof(argv[0]);
+    if(argc > 1){
+	packet_loss_rate = atof(argv[1]);
     }
-    if(argc >= 2){
-	ack_loss_rate = atof(argv[1]);
+    if(argc > 2){
+	ack_loss_rate = atof(argv[2]);
     }
 
 
@@ -164,7 +163,6 @@ int main(int argc, char **argv) {
     send_message.packet_sequence = htons(0);
     send_message.msg_len = htons(msg_len);
     strcpy(send_message.data, filename);
-    printf("%lu", sizeof(send_message));
     bytes_sent = sendto(sock_client, &send_message, STRING_SIZE + 4, 0, (struct sockaddr *) &server_addr, sizeof(server_addr));
     /* Open the output file */
 
@@ -200,12 +198,13 @@ int main(int argc, char **argv) {
         if(SimulateLoss(packet_loss_rate) == 0){
             // The packet is the correct number, deliver normally and return an ACK of the same seq no
             if(recv_message.packet_sequence == expected_seq){
-		printf("%s", recv_message.data);
+		recv_message.data[MAX_SIZE] = '\0';
                 fputs(recv_message.data, output);
+		memset(recv_message.data, '\0', MAX_SIZE);
                 send_ack.number = htons(expected_seq);
                 // Update the next sequence number
+                printf("Packet %d recieved with %d data bytes\n", expected_seq, recv_message.msg_len);
                 expected_seq = 1 - expected_seq;
-                printf("Packet %d recieved with %d data bytes\n", packet_count, recv_message.msg_len);
                 succ_packets++;
                 data_delivered += recv_message.msg_len;
             }
@@ -213,6 +212,7 @@ int main(int argc, char **argv) {
             else{
                 duplicates++;
                 send_ack.number = htons(1 - expected_seq);
+		memset(recv_message.data, '\0', MAX_SIZE);
                 printf("Duplicate packet %d recieved with %d data bytes\n", packet_count, recv_message.msg_len);
             }
 
@@ -220,13 +220,13 @@ int main(int argc, char **argv) {
             // Simulate ack loss, if 0 the ACK is sent
             if(SimulateAckLoss(ack_loss_rate) == 0){
                 bytes_sent = sendto(sock_client, &send_ack, 2, 0, (struct sockaddr *) &server_addr, sizeof(server_addr));
-                printf("Ack %d Transmitted\n", ack_count);
+                printf("Ack %d Transmitted\n", 1 - expected_seq);
                 succ_acks++;                
             }
             else{
                 // Ack is lost
                 lost_acks++;
-                printf("Ack %d Lost\n", ack_count);
+                printf("Ack %d Lost\n", 1 - expected_seq);
             }
             
         }
@@ -236,16 +236,17 @@ int main(int argc, char **argv) {
         }
     }
     /* EOT Packet was recieved, print stats */
+    printf("-----Client Statistics-----\n");
     printf("End of Transmission packet %d recieved with %d data bytes\n", packet_count, recv_message.msg_len);
-    printf("%d Packets recieved successfully", packet_count);
-    printf("Total Data Delivered: %d  bytes", packet_count);
-    printf("Total Data Recieved: %d  bytes", packet_count);
-    printf("%d Duplicate Packets", packet_count);
-    printf("%d Packets Lost", packet_count);
-    printf("Total Packets Recieved: %d", packet_count);
-    printf("%d Acks Transmitted", packet_count);
-    printf("%d Acks Dropped", packet_count);
-    printf("Total ACKs generated: %d", packet_count);
+    printf("%d Packets recieved successfully\n", succ_packets);
+    printf("Total Data Delivered: %d  bytes\n", data_delivered);
+    printf("Total Data Recieved: %d  bytes\n", data_recieved);
+    printf("%d Duplicate Packets\n", duplicates);
+    printf("%d Packets Lost\n", packet_count - succ_packets - 1);
+    printf("Total Packets Recieved: %d\n", packet_count);
+    printf("%d Acks Transmitted\n", succ_acks);
+    printf("%d Acks Dropped\n", lost_acks);
+    printf("Total ACKs generated: %d\n", ack_count);
 
     /* close the socket */
 

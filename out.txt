@@ -1,49 +1,23 @@
 In this project, you will implement a client and a server
 which use TCP to transmit a file from the server to the client.
 Both the client and the server will run on the course VM
-ient.
 {\em cisc450.cis.udel.edu},
-r will run on the course VM
-ient.
 but they should be written in such a way that they could
-ient.
 conceivably be run on any two hosts, not necessarily the same.
-
 For convenience, both the hostname and the server
-y the same.
-
 port number may be hardcoded into both client and server,
-me.
-
 but this should be done in such a way that they should
-,
-me.
-
 be easy to change.
-one in such a way that they should
-,
-me.
 
+The server starts by waiting for a connection request from the client. %printin
 
- easy to change.
-one in such a way that they should
-,
-me.
-
-The server starts by waiting for a connection request from the client. %printinÿ
-he server starts by waiting for a connection request from the client. %printinÿ
-e server starts by waiting for a connection request from the client. %printinÿThe client starts by prompting the user to enter 
-st from the client. %printinÿ%the hostname and port number for the server. 
- 
-st from the client. %printinÿ%It then prompts the user to enter
-e server. 
- 
-st from the client. %printinÿthe name of the file to be transferred. The client then sends a connection
-tinÿrequest to the server.  After the connection is established, the client sends aÿ
-equest to the server.  After the connection is established, the client sends aÿfilename to the server. The server reads the file and sends it to the client inÿ
-ilename to the server. The server reads the file and sends it to the client inÿa series of packets as described below. The client receives the file and storesÿ
- series of packets as described below. The client receives the file and storesÿit with the name {\em out.txt}.
-below. The client receives the file and storesÿWhen the file transfer is complete, both the client 
-eives the file and storesÿand the server terminate execution.
-oth the client 
-eives the file and storesÿ
+The client starts by prompting the user to enter 
+%the hostname and port number for the server. 
+%It then prompts the user to enter
+the name of the file to be transferred. The client then sends a connection
+request to the server.  After the connection is established, the client sends a
+filename to the server. The server reads the file and sends it to the client in
+a series of packets as described below. The client receives the file and stores
+it with the name {\em out.txt}.
+When the file transfer is complete, both the client 
+and the server terminate execution.
