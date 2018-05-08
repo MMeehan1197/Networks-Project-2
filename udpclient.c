@@ -9,14 +9,15 @@
 #include <sys/socket.h>     /* for socket, sendto, and recvfrom */
 #include <netinet/in.h>     /* for sockaddr_in */
 #include <unistd.h>         /* for close */
+#include <math.h>	    /* for timeout calculations */
 
 #define STRING_SIZE 1024
 #define MAX_SIZE 80
 
 /* Struct and Function Declarations */
 struct segment{
-    unsigned short packet_sequence;
-    unsigned short msg_len;
+    short unsigned int packet_sequence;
+    short unsigned int msg_len;
     char data[STRING_SIZE];
 };
 
@@ -36,7 +37,7 @@ int SimulateLoss(double packet_rate){
 
 int SimulateAckLoss(double ack_rate){
     double val = (double)rand() / (double)RAND_MAX;
-    if (val < packet_rate){
+    if (val < ack_rate){
         return 1;
     }
     else {
@@ -48,7 +49,7 @@ int SimulateAckLoss(double ack_rate){
 
 
 
-int main(void) {
+int main(int argc, char **argv) {
 
     int sock_client;  /* Socket used by client */ 
 
@@ -63,18 +64,29 @@ int main(void) {
     char server_hostname[STRING_SIZE]; /* Server's hostname */
     unsigned short server_port;  /* Port number used by server (remote port) */
 
-    char sentence[STRING_SIZE];  /* send message */
+    char filename[STRING_SIZE];  /* filename */
     char modifiedSentence[STRING_SIZE]; /* receive message */
     unsigned int msg_len;  /* length of message */
     int bytes_sent, bytes_recd; /* number of bytes sent or received */
     int packet_count, ack_count, duplicates, lost_packets, lost_acks, succ_packets, succ_acks, data_delivered, data_recieved;
     int expected_seq;
-    double packet_loss_rate;
-    double ack_loss_rate;
+    float packet_loss_rate = 0;
+    float timeout_n  = 0;
+    float ack_loss_rate = 0;
     char line[MAX_SIZE];
     struct segment send_message;
     struct segment recv_message;
     struct ACK send_ack;
+    struct timeval timeout;
+
+    if(argc >= 1){
+	packet_loss_rate = atof(argv[0]);
+    }
+    if(argc >= 2){
+	ack_loss_rate = atof(argv[1]);
+    }
+
+
 
     
     
@@ -151,8 +163,9 @@ int main(void) {
     /* Prepare the segment to be sent */
     send_message.packet_sequence = htons(0);
     send_message.msg_len = htons(msg_len);
-    strcopy(send_message.data, filename);
-    bytes_sent = sendto(sock_client, &send_message, sizeof(send_message), 0, (struct sockaddr *) &server_addr, sizeof(server_addr));
+    strcpy(send_message.data, filename);
+    printf("%lu", sizeof(send_message));
+    bytes_sent = sendto(sock_client, &send_message, STRING_SIZE + 4, 0, (struct sockaddr *) &server_addr, sizeof(server_addr));
     /* Open the output file */
 
     FILE* output = fopen("out.txt", "w");
@@ -172,7 +185,7 @@ int main(void) {
     
     for ( ; ; ){
         /* Wait for Packet to arrive */
-        bytes_recd = recvfrom(sock_client, &recv_message, MAX_SIZE + 4, 0, (struct sockaddr *) 0, (int *) 0);
+        bytes_recd = recvfrom(sock_client, &recv_message, MAX_SIZE + 4, 0, (struct sockaddr *) 0, (unsigned int *) 0);
         // Process Packet
         recv_message.packet_sequence  = ntohs(recv_message.packet_sequence); 
         recv_message.msg_len  = ntohs(recv_message.msg_len);
@@ -187,7 +200,8 @@ int main(void) {
         if(SimulateLoss(packet_loss_rate) == 0){
             // The packet is the correct number, deliver normally and return an ACK of the same seq no
             if(recv_message.packet_sequence == expected_seq){
-                fputs(line, output);
+		printf("%s", recv_message.data);
+                fputs(recv_message.data, output);
                 send_ack.number = htons(expected_seq);
                 // Update the next sequence number
                 expected_seq = 1 - expected_seq;
@@ -205,20 +219,20 @@ int main(void) {
             ack_count += 1;
             // Simulate ack loss, if 0 the ACK is sent
             if(SimulateAckLoss(ack_loss_rate) == 0){
-                bytes_sent = sendto(sock_client, &send_ack, sizeof(send_ack), 0, (struct sockaddr *) &server_addr, sizeof(server_addr));
-                printf("Ack %d Transmitted", ack_count);
+                bytes_sent = sendto(sock_client, &send_ack, 2, 0, (struct sockaddr *) &server_addr, sizeof(server_addr));
+                printf("Ack %d Transmitted\n", ack_count);
                 succ_acks++;                
             }
             else{
                 // Ack is lost
                 lost_acks++;
-                printf("Ack %d Lost", ack_count);
+                printf("Ack %d Lost\n", ack_count);
             }
             
         }
         else{
             // Packet is Lost
-            printf("Packet %d Lost", packet_count);
+            printf("Packet %d Lost\n", packet_count);
         }
     }
     /* EOT Packet was recieved, print stats */

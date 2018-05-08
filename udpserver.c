@@ -9,9 +9,10 @@
 #include <sys/socket.h>     /* for socket, sendto, and recvfrom */
 #include <netinet/in.h>     /* for sockaddr_in */
 #include <unistd.h>         /* for close */
-
+#include <math.h>	    /* for timeout operations */
 #define STRING_SIZE 1024
 #define MAX_SIZE 80
+#define SEGMENT_SIZE 84
 
 /* SERV_UDP_PORT is the port number on which the server listens for
    incoming messages from clients. You should change this to a different
@@ -22,12 +23,12 @@
  /* Struct and Function Declarations */
 
 struct segment{
-   unsigned short packet_sequence;
-   unsigned short msg_len;
+   short unsigned int packet_sequence;
+   short unsigned int msg_len;
    char data[STRING_SIZE];
 };
 
-struct ACK{
+struct ack{
       unsigned short number;
 };
 
@@ -38,7 +39,7 @@ char * getLine(FILE *filename, char *currentLine){
 }
 
 
-int main(void) {
+int main(int argc, char **argv) {
 
       /* Variable Declarations */
 
@@ -53,22 +54,27 @@ int main(void) {
       unsigned int client_addr_len;  /* Length of client address structure */
 
       struct segment message;  /* receive segment */
-      char modifiedSentence[STRING_SIZE]; /* send message */
+      char filename[STRING_SIZE]; /* send message */
       unsigned int msg_len;  /* length of message */
       int bytes_sent, bytes_recd; /* number of bytes sent or received */
       unsigned int i;  /* temporary loop variable */
       int count, c ;    /* The number of characters in the line and the current character */
-      char* current_line;    /* Buffer for the line of characters */
+      char current_line[MAX_SIZE];    /* Buffer for the line of characters */
       struct timeval timeout;
-      struct ACK ack_rec;
+      struct ack ack_rec;
       short int ack_sequence = 0;
+      int timeout_n;
 
       // THESE ARE DEFAULT TIMEOUT VALS, NEED TO BE CHANGED
-      timeout.tv_sec = 10;
-      timeout.tv_usec = 0;
-      setsockopt(sock_client, SOL_SOCKET, SO_RCVTIMEO, (const void *) &timeout, sizeof(timeout));
-
-
+      timeout.tv_sec = 10;
+      timeout.tv_usec = 0;
+      setsockopt(sock_server, SOL_SOCKET, SO_RCVTIMEO, (const void *) &timeout, sizeof(timeout));
+      if(argc > 0){
+	  timeout_n = atoi(argv[0]);
+          timeout.tv_sec = floor(pow(10, timeout_n)/pow(10, 6));
+          timeout.tv_usec =(int) pow(10, timeout_n)% (int)pow(10, 6);
+          setsockopt(sock_server, SOL_SOCKET, SO_RCVTIMEO, (const void *) &timeout, sizeof(timeout));
+      }
       /* open a socket */
 
       if ((sock_server = socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP)) < 0) {
@@ -101,20 +107,18 @@ int main(void) {
                               server_port);
 
       client_addr_len = sizeof (client_addr);
-
 for (;;) {
       /* Outer Loop: Wait for call from above */
       for( ; ; ){
             /* receive the message */
-      
-            bytes_recd = recvfrom(sock_server, &message, sizeof(message), 0, (struct sockaddr *) &client_addr, &client_addr_len);
+            bytes_recd = recvfrom(sock_server, &message, STRING_SIZE + 4, 0, (struct sockaddr *) &client_addr, &client_addr_len);
 
             /* Process the First Packet */
 
             message.packet_sequence  = ntohs(message.packet_sequence);
             message.msg_len  = ntohs(message.msg_len);
             int filename_size = message.msg_len;
-            filename = message.data;
+            strcpy(filename, message.data);
 
             /* Opening the file */
 
@@ -126,16 +130,15 @@ for (;;) {
             
             /* Send the first line of the file to transition to next state */
             if(getLine(file, current_line) != NULL){
-                  msg_len = strlen(current_line);
                   message.packet_sequence = htons(packet_sequence);
                   message.msg_len = htons(msg_len);
-                  strcopy(message.data, current_line);
-                  bytes_sent = sendto(sock_server, &message, sizeof(message), 0, (struct sockaddr *) &client_addr, &client_addr_len);
+                  strcpy(message.data, current_line);
+                  bytes_sent = sendto(sock_server, &message, strlen(message.data) + 4, 0, (struct sockaddr *) &client_addr, client_addr_len);
                   printf("Packet %d transmitted with %d data bytes\n", packet_sequence, msg_len);
             }
             else{
                   // Close connection if the file does not exist
-                  printf("File does not exist, terminating connection")
+                  printf("File does not exist, terminating connection");
                   break;
             }
             
@@ -144,21 +147,20 @@ for (;;) {
             for( ; ; ){
                   /* Wait for ACK to send next line */
                   bytes_recd = recvfrom(sock_server, &ack_rec, 2, 0, (struct sockaddr *) &client_addr, &client_addr_len);
-
-                  if (bytes_recd <=0){
+		  if (bytes_recd <= 0){
                         // Timeout, resend the line
-                        bytes_sent = sendto(sock_server, &message, sizeof(message), 0, (struct sockaddr *) &client_addr, &client_addr_len);
+                        bytes_sent = sendto(sock_server, &message, sizeof(message), 0, (struct sockaddr *) &client_addr, client_addr_len);
                   }
-                  else if (akc_rec == ack_sequence){
+                  else if (ntohs(ack_rec.number) == ack_sequence){
                         // Correct Ack recieved, transmit the next line
                         if(getLine(file, current_line) != NULL){
                               packet_sequence += 1;
                               ack_sequence = 1 - ack_sequence;
                               msg_len = strlen(current_line);
-                              message.packet_sequence = htons(packet_sequence);
+                              message.packet_sequence = htons(ack_sequence);
                               message.msg_len = htons(msg_len);
-                              message.data = current_line;
-                              bytes_sent = sendto(sock_server, &message, sizeof(message), 0, (struct sockaddr *) &client_addr, &client_addr_len);
+                              strcpy(message.data, current_line);
+                              bytes_sent = sendto(sock_server, &message, msg_len + 4, 0, (struct sockaddr *) &client_addr, client_addr_len);
                               printf("Packet %d transmitted with %d data bytes\n", packet_sequence, msg_len);
                         }
                         else{
@@ -168,19 +170,18 @@ for (;;) {
                   }
                   // If incorrect ACK is recieved, do nothing
             }
-            break;
-      }
-      fclose(file);
+      	fclose(file);
 
-      /* Sending End of transmission packet */
+      	/* Sending End of transmission packet */
+	struct segment eot_packet;
+      	eot_packet.packet_sequence = htons(packet_sequence + 1);
+      	eot_packet.msg_len = htons(0);
+      	bytes_sent = sendto(sock_server, &eot_packet, 4, 0, (struct sockaddr *)&client_addr, client_addr_len);
+	printf("EOT packet sent");
+      	/* close the socket */
 
-      message.packet_sequence += 1;
-      message.msg_len = 0;
-      bytes_sent = send(sock_connection, &message, 8, 0);
-
-      /* close the socket */
-
-      close(sock_connection);    
-      
+      	close(sock_server);
+      	return 0; 
+      	}
+    }
 }
-
